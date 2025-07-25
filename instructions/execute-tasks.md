@@ -338,9 +338,65 @@ encoding: UTF-8
 
 </step>
 
-<step number="9" name="git_workflow">
+<step number="9" name="security_verification">
 
-### Step 9: Git Workflow
+### Step 9: Security Verification
+
+<step_metadata>
+  <runs>security scans</runs>
+  <ensures>no vulnerabilities introduced</ensures>
+</step_metadata>
+
+<security_checks>
+  <dependency_scan>
+    - scan for known vulnerabilities
+    - check dependency versions
+    - verify no high/critical issues
+  </dependency_scan>
+  <code_analysis>
+    - verify no hardcoded secrets
+    - check input validation
+    - ensure secure coding practices
+  </code_analysis>
+</security_checks>
+
+<scan_commands>
+  <examples>
+    - npm: npm audit --audit-level=moderate
+    - ruby: bundle audit check
+    - python: pip-audit
+    - general: trivy fs --severity HIGH,CRITICAL .
+  </examples>
+  <ci_templates>
+    - gitlab: @agent-os/templates/gitlab-ci-security.yml
+    - github: @agent-os/templates/github-actions-security.yml
+    - generic: @agent-os/templates/generic-ci-security.sh
+  </ci_templates>
+</scan_commands>
+
+<failure_handling>
+  <high_severity>
+    - fix immediately
+    - do not proceed until resolved
+  </high_severity>
+  <medium_severity>
+    - document in PR
+    - create follow-up task if needed
+  </medium_severity>
+</failure_handling>
+
+<instructions>
+  ACTION: Run security scans appropriate to tech stack
+  VERIFY: No high/critical vulnerabilities
+  FIX: Any security issues before continuing
+  REFERENCE: @~/.agent-os/standards/security.md
+</instructions>
+
+</step>
+
+<step number="10" name="git_workflow">
+
+### Step 10: Git Workflow
 
 <step_metadata>
   <creates>
@@ -389,9 +445,9 @@ encoding: UTF-8
 
 </step>
 
-<step number="10" name="roadmap_progress_check">
+<step number="11" name="roadmap_progress_check">
 
-### Step 10: Roadmap Progress Check
+### Step 11: Roadmap Progress Check
 
 <step_metadata>
   <checks>@.agent-os/product/roadmap.md</checks>
@@ -416,9 +472,9 @@ encoding: UTF-8
 
 </step>
 
-<step number="11" name="completion_notification">
+<step number="12" name="completion_notification">
 
-### Step 11: Task Completion Notification
+### Step 12: Task Completion Notification
 
 <step_metadata>
   <plays>system sound</plays>
@@ -436,9 +492,9 @@ encoding: UTF-8
 
 </step>
 
-<step number="12" name="completion_summary">
+<step number="13" name="completion_summary">
 
-### Step 12: Completion Summary
+### Step 13: Completion Summary
 
 <step_metadata>
   <creates>summary message</creates>
@@ -508,6 +564,11 @@ encoding: UTF-8
     <commits>clear and descriptive</commits>
     <pull_requests>detailed descriptions</pull_requests>
   </documentation>
+  <security>
+    <follow>@~/.agent-os/standards/security.md</follow>
+    <scan>before every commit</scan>
+    <fix>high/critical issues immediately</fix>
+  </security>
 </standards>
 
 ## Error Handling
@@ -533,6 +594,7 @@ encoding: UTF-8
   <verify>
     - [ ] Task implementation complete
     - [ ] All tests passing
+    - [ ] Security scans passing
     - [ ] tasks.md updated
     - [ ] Code committed and pushed
     - [ ] Pull request created

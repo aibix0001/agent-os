@@ -13,6 +13,7 @@ This file directs Claude Code to use your personal Agent OS standards for all de
 - **Tech Stack Defaults:** @~/.agent-os/standards/tech-stack.md
 - **Code Style Preferences:** @~/.agent-os/standards/code-style.md
 - **Best Practices Philosophy:** @~/.agent-os/standards/best-practices.md
+- **Security Standards:** @~/.agent-os/standards/security.md
 
 ### Agent OS Instructions
 - **Initialize Products:** @~/.agent-os/instructions/plan-product.md
