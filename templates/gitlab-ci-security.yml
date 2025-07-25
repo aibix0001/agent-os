@@ -4,47 +4,26 @@
 # in all GitLab CI pipelines. It runs before the build stage to catch
 # security issues early in the development process.
 #
+# IMPORTANT: For JavaScript/Node.js projects, you MUST include the
+# mandatory-javascript-supply-chain-scan.yml BEFORE this template.
+#
 # Usage:
 # In your .gitlab-ci.yml file, include this template:
 #
+# For JavaScript projects:
 # include:
-#   - project: 'your-group/agent-os'
-#     ref: main
-#     file: '/templates/gitlab-ci-security.yml'
+#   - local: '.agent-os/templates/mandatory-javascript-supply-chain-scan.yml'
+#   - local: '.agent-os/templates/gitlab-ci-security.yml'
 #
-# Or if using a local copy:
-#
+# For non-JavaScript projects:
 # include:
 #   - local: '.agent-os/templates/gitlab-ci-security.yml'
 
 stages:
   - security
 
-# Scan for known compromised package versions
-dependency-scan:
-  stage: security
-  image: node:20-bullseye
-  script:
-    - |
-      set -euo pipefail
-      echo "🔍 Scanning for compromised package versions..."
-      
-      # Known compromised package versions regex
-      VULN_REGEX='eslint-config-prettier@\(8\.10\.1\|9\.1\.1\|10\.1\.\(6\|7\)\)|eslint-plugin-prettier@4\.2\.\(2\|3\)|synckit@0\.11\.9|@pkgr/core@0\.2\.8|napi-postinstall@0\.3\.1|got-fetch@5\.1\.\(11\|12\)|is@\(3\.3\.1\|5\.0\.0\)'
-      
-      # Search for vulnerable packages
-      matches=$(grep -R --line-number -E "$VULN_REGEX" --exclude-dir=.git --exclude='*.lock' . || true)
-      
-      if [[ -n "$matches" ]]; then
-        echo "❌ Compromised packages found:"
-        echo "$matches"
-        exit 3
-      else
-        echo "✅ No compromised package versions found."
-      fi
-  allow_failure: false
-  tags:
-    - docker
+# Note: For JavaScript projects, the compromised package scan is handled by
+# mandatory-javascript-supply-chain-scan.yml which must be included first
 
 # Trivy vulnerability scanner
 trivy-scan:

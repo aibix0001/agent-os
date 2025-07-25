@@ -2,9 +2,51 @@
 
 This directory contains security scanning templates for various CI/CD platforms. These templates ensure consistent security checks across all projects using Agent OS.
 
+## ⚠️ CRITICAL: Mandatory Security Scan for JavaScript Projects
+
+**All JavaScript/Node.js projects MUST include the mandatory supply chain security scan** to detect known compromised packages. This is not optional due to active supply chain attacks.
+
+### CVE-2025-54313: Supply Chain Compromise Alert
+
+In July 2025, several popular npm packages were compromised with embedded malicious code (Scavenger malware) that targets Windows systems. The attack affects:
+
+- **eslint-config-prettier**: versions 8.10.1, 9.1.1, 10.1.6, 10.1.7 (30M+ weekly downloads)
+- **eslint-plugin-prettier**: versions 4.2.2, 4.2.3
+- **synckit**: version 0.11.9
+- **Additional packages**: @pkgr/core@0.2.8, napi-postinstall@0.3.1, got-fetch@5.1.11-12, is@3.3.1,5.0.0
+
+The malware can harvest credentials, files, and execute arbitrary code on compromised systems.
+
+**Mandatory Action**: Include `mandatory-javascript-supply-chain-scan.yml` as the FIRST security check in all JavaScript project pipelines.
+
 ## Available Templates
 
-### 1. GitLab CI Security Template (`gitlab-ci-security.yml`)
+### 1. Mandatory JavaScript Supply Chain Scan (`mandatory-javascript-supply-chain-scan.yml`) 🚨
+
+**REQUIRED for all JavaScript/Node.js projects.** This template detects known compromised packages in the npm supply chain.
+
+**Features:**
+- Scans for CVE-2025-54313 affected packages
+- Checks package.json, package-lock.json, yarn.lock, and all source files
+- Blocks pipeline execution if compromised packages are found
+- Provides detailed remediation instructions
+
+**Usage (GitLab CI):**
+```yaml
+# This MUST be the first include
+include:
+  - local: '.agent-os/templates/mandatory-javascript-supply-chain-scan.yml'
+  - local: '.agent-os/templates/gitlab-ci-security.yml'  # Other security scans
+
+stages:
+  - critical-security  # From mandatory scan
+  - security
+  - build
+  - test
+  - deploy
+```
+
+### 2. GitLab CI Security Template (`gitlab-ci-security.yml`)
 
 A comprehensive security scanning template for GitLab CI pipelines that includes:
 - Compromised package detection
@@ -27,7 +69,7 @@ include:
     file: '/templates/gitlab-ci-security.yml'
 ```
 
-### 2. GitHub Actions Security Template (`github-actions-security.yml`)
+### 3. GitHub Actions Security Template (`github-actions-security.yml`)
 
 A reusable workflow for GitHub Actions that provides:
 - All the same security checks as GitLab
@@ -50,7 +92,7 @@ jobs:
     uses: your-org/agent-os/.github/workflows/security-template.yml@main
 ```
 
-### 3. Generic CI Security Script (`generic-ci-security.sh`)
+### 4. Generic CI Security Script (`generic-ci-security.sh`)
 
 A standalone bash script that can be integrated into any CI system:
 - Jenkins
@@ -112,6 +154,16 @@ To add new security checks:
 3. Document the new check in this README
 4. Update the exit codes if needed
 
+## JavaScript Project Requirements
+
+For JavaScript/Node.js projects, the following security measures are **MANDATORY**:
+
+1. **Include the mandatory supply chain scan** as the first security check
+2. **Use the critical-security stage** before any other pipeline stages
+3. **Block compromised packages** - Exit code 3 indicates supply chain compromise
+4. **Update immediately** if compromised packages are detected
+5. **Rotate credentials** if your pipeline ran with compromised packages
+
 ## Best Practices
 
 1. **Run Early**: Security scans should run before build/test stages
@@ -119,6 +171,7 @@ To add new security checks:
 3. **Regular Updates**: Keep scanning tools and vulnerability databases updated
 4. **Monitor Results**: Review security scan results regularly
 5. **Fix Promptly**: Address security issues before merging code
+6. **JavaScript Projects**: Always include the mandatory supply chain scan first
 
 ## Tool Installation
 
