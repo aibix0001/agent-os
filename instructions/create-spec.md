@@ -95,6 +95,7 @@ encoding: UTF-8
     - @.agent-os/product/mission.md
     - @.agent-os/product/roadmap.md
     - @.agent-os/product/tech-stack.md
+    - @~/.agent-os/standards/security.md
   </reads>
   <purpose>understand spec alignment</purpose>
 </step_metadata>
@@ -395,10 +396,19 @@ encoding: UTF-8
     - selected approach
     - rationale for selection
   </approach_options>
+  <security_analysis>
+    - authentication requirements
+    - authorization model
+    - data protection needs
+    - input validation requirements
+    - potential security risks
+    - mitigation strategies
+  </security_analysis>
   <external_dependencies>
     - new libraries/packages
     - justification for each
     - version requirements
+    - security audit status
   </external_dependencies>
 </spec_sections>
 
@@ -420,10 +430,28 @@ encoding: UTF-8
 
   **Rationale:** [EXPLANATION]
 
+  ## Security Analysis
+
+  ### Authentication & Authorization
+  - **Authentication Method:** [METHOD]
+  - **Authorization Model:** [MODEL]
+
+  ### Data Protection
+  - **Sensitive Data:** [DATA_TYPES]
+  - **Protection Methods:** [ENCRYPTION/HASHING]
+
+  ### Security Risks & Mitigations
+  - **Risk:** [POTENTIAL_RISK]
+    - **Mitigation:** [MITIGATION_STRATEGY]
+
+  ### Input Validation
+  - [VALIDATION_REQUIREMENTS]
+
   ## External Dependencies
 
   - **[LIBRARY_NAME]** - [PURPOSE]
   - **Justification:** [REASON_FOR_INCLUSION]
+  - **Security Status:** [LAST_AUDIT_DATE/KNOWN_VULNERABILITIES]
 </example_template>
 
 <instructions>

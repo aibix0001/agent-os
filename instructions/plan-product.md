@@ -64,8 +64,9 @@ encoding: UTF-8
   <primary>user_direct_input</primary>
   <fallback_sequence>
     1. @~/.agent-os/standards/tech-stack.md
-    2. @~/.claude/CLAUDE.md
-    3. Cursor User Rules
+    2. @~/.agent-os/standards/security.md
+    3. @~/.claude/CLAUDE.md
+    4. Cursor User Rules
   </fallback_sequence>
 </data_sources>
 
@@ -144,6 +145,7 @@ encoding: UTF-8
     - The Problem
     - Differentiators
     - Key Features
+    - Security Considerations
   </required_sections>
 </file_template>
 
@@ -235,6 +237,30 @@ encoding: UTF-8
     - total: 8-10 features
     - grouping: by category
     - description: user-benefit focused
+  </constraints>
+</section>
+
+<section name="security_considerations">
+  <template>
+    ## Security Considerations
+
+    ### Data Protection
+    - **[DATA_TYPE]:** [PROTECTION_METHOD]
+    - **[DATA_TYPE]:** [PROTECTION_METHOD]
+
+    ### Compliance Requirements
+    - [COMPLIANCE_REQUIREMENT_1]
+    - [COMPLIANCE_REQUIREMENT_2]
+
+    ### Security Measures
+    - **Authentication:** [AUTH_APPROACH]
+    - **Authorization:** [AUTHZ_APPROACH]
+    - **Data Encryption:** [ENCRYPTION_STANDARDS]
+    - **Vulnerability Management:** [SCANNING_APPROACH]
+  </template>
+  <constraints>
+    - focus: key security aspects
+    - reference: @~/.agent-os/standards/security.md
   </constraints>
 </section>
 

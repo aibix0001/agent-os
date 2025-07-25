@@ -1,0 +1,193 @@
+# GitHub Actions Security Template for Agent OS
+#
+# This template provides security scanning jobs that should be included
+# in all GitHub Actions workflows. It runs security checks to catch
+# vulnerabilities early in the development process.
+#
+# Usage:
+# In your .github/workflows/ directory, create a security.yml file
+# that uses this as a reusable workflow:
+#
+# name: Security Scan
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main ]
+#
+# jobs:
+#   security:
+#     uses: your-org/agent-os/.github/workflows/security-template.yml@main
+
+name: Security Scanning
+
+on:
+  workflow_call:
+
+jobs:
+  # Scan for known compromised package versions
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Scan for compromised packages
+        run: |
+          set -euo pipefail
+          echo "🔍 Scanning for compromised package versions..."
+          
+          # Known compromised package versions regex
+          VULN_REGEX='eslint-config-prettier@\(8\.10\.1\|9\.1\.1\|10\.1\.\(6\|7\)\)|eslint-plugin-prettier@4\.2\.\(2\|3\)|synckit@0\.11\.9|@pkgr/core@0\.2\.8|napi-postinstall@0\.3\.1|got-fetch@5\.1\.\(11\|12\)|is@\(3\.3\.1\|5\.0\.0\)'
+          
+          # Search for vulnerable packages
+          matches=$(grep -R --line-number -E "$VULN_REGEX" --exclude-dir=.git --exclude='*.lock' . || true)
+          
+          if [[ -n "$matches" ]]; then
+            echo "❌ Compromised packages found:"
+            echo "$matches"
+            exit 3
+          else
+            echo "✅ No compromised package versions found."
+          fi
+
+  # Trivy vulnerability scanner
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Language-specific security scans
+  language-security:
+    name: Language-Specific Security Scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        if: hashFiles('package-lock.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run npm audit
+        if: hashFiles('package-lock.json') != ''
+        run: |
+          echo "📦 Running npm audit..."
+          npm audit --audit-level=moderate
+      
+      - name: Setup Ruby
+        if: hashFiles('Gemfile.lock') != ''
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      
+      - name: Run bundle audit
+        if: hashFiles('Gemfile.lock') != ''
+        run: |
+          echo "💎 Running bundle audit..."
+          gem install bundle-audit
+          bundle audit check --update
+      
+      - name: Setup Python
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Run pip-audit
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        run: |
+          echo "🐍 Running pip-audit..."
+          pip install pip-audit
+          pip-audit
+
+  # Secret detection
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified --fail
+
+  # SAST with Semgrep
+  sast-scan:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Semgrep scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+          generateSarif: true
+      
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  # CodeQL analysis (for supported languages)
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'python', 'ruby', 'java', 'go', 'csharp', 'cpp' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # License compliance
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: License Finder
+        run: |
+          echo "📜 Checking license compliance..."
+          docker run -v $PWD:/scan licensefinder/license_finder || true
+          echo "ℹ️ Review license report above for compliance"
