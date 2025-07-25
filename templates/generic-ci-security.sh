@@ -4,6 +4,9 @@
 # This script provides security checks that can be integrated into any CI system.
 # It performs the same security scans as the GitLab and GitHub templates.
 #
+# IMPORTANT: For JavaScript/Node.js projects, this script now includes
+# the mandatory supply chain compromise detection as the FIRST check.
+#
 # Usage:
 # Make this script executable: chmod +x generic-ci-security.sh
 # Run in your CI pipeline: ./generic-ci-security.sh
@@ -12,7 +15,7 @@
 # 0 - All security checks passed
 # 1 - Security vulnerabilities found
 # 2 - Script error
-# 3 - Compromised packages found
+# 3 - Compromised packages found (CRITICAL - supply chain attack)
 
 set -euo pipefail
 

@@ -4,6 +4,10 @@
 # in all GitHub Actions workflows. It runs security checks to catch
 # vulnerabilities early in the development process.
 #
+# IMPORTANT: For JavaScript/Node.js projects, you MUST manually include
+# the compromised package scan from mandatory-javascript-supply-chain-scan.yml
+# as the FIRST job in your security workflow.
+#
 # Usage:
 # In your .github/workflows/ directory, create a security.yml file
 # that uses this as a reusable workflow:
@@ -16,8 +20,19 @@
 #     branches: [ main ]
 #
 # jobs:
+#   # For JavaScript projects, add this job first:
+#   supply-chain-scan:
+#     name: Mandatory Supply Chain Security Scan
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Run mandatory scan
+#         run: |
+#           # Copy the script from mandatory-javascript-supply-chain-scan.yml
+#   
 #   security:
 #     uses: your-org/agent-os/.github/workflows/security-template.yml@main
+#     needs: supply-chain-scan  # For JavaScript projects
 
 name: Security Scanning
 

@@ -1,0 +1,144 @@
+# Mandatory JavaScript Supply Chain Security Scan for Agent OS
+#
+# This template is MANDATORY for all JavaScript/Node.js projects to detect
+# known compromised packages in the supply chain. It specifically targets
+# packages that have been compromised with embedded malicious code.
+#
+# IMPORTANT: This scan MUST be included in all CI/CD pipelines for JavaScript projects
+# and should run as the first security check before any other operations.
+#
+# Last Updated: 2025-07-25
+# Maintained by: Agent OS Security Team
+
+stages:
+  - critical-security  # This stage should run before all others
+
+# MANDATORY: Supply Chain Compromise Detection
+# This job scans for specific package versions known to contain malicious code
+supply-chain-compromise-scan:
+  stage: critical-security
+  image: node:20-bullseye
+  script:
+    - |
+      set -euo pipefail
+      echo "🚨 MANDATORY: Scanning for known compromised packages in supply chain..."
+      echo "============================================================"
+      
+      # CVE-2025-54313: eslint-config-prettier and related packages compromise
+      # These versions contain embedded malicious code (Scavenger malware) that targets Windows systems
+      # The malware harvests credentials, files, and performs unauthorized activities
+      # 
+      # Affected packages and versions:
+      # - eslint-config-prettier: 8.10.1, 9.1.1, 10.1.6, 10.1.7
+      # - eslint-plugin-prettier: 4.2.2, 4.2.3
+      # - synckit: 0.11.9
+      # - @pkgr/core: 0.2.8 (related compromise)
+      # - napi-postinstall: 0.3.1 (related compromise)
+      # - got-fetch: 5.1.11, 5.1.12 (related compromise)
+      # - is: 3.3.1, 5.0.0 (related compromise)
+      
+      VULN_REGEX='eslint-config-prettier@\(8\.10\.1\|9\.1\.1\|10\.1\.\(6\|7\)\)|eslint-plugin-prettier@4\.2\.\(2\|3\)|synckit@0\.11\.9|@pkgr/core@0\.2\.8|napi-postinstall@0\.3\.1|got-fetch@5\.1\.\(11\|12\)|is@\(3\.3\.1\|5\.0\.0\)'
+      
+      echo "Checking package.json files..."
+      package_json_matches=$(find . -name "package.json" -not -path "*/node_modules/*" -exec grep -l -E "$VULN_REGEX" {} \; 2>/dev/null || true)
+      
+      echo "Checking package-lock.json files..."
+      lock_matches=$(find . -name "package-lock.json" -not -path "*/node_modules/*" -exec grep -l -E "$VULN_REGEX" {} \; 2>/dev/null || true)
+      
+      echo "Checking yarn.lock files..."
+      yarn_matches=$(find . -name "yarn.lock" -not -path "*/node_modules/*" -exec grep -l -E "$VULN_REGEX" {} \; 2>/dev/null || true)
+      
+      echo "Checking all other files (excluding lockfiles and node_modules)..."
+      other_matches=$(grep -R --line-number -E "$VULN_REGEX" \
+        --exclude-dir=node_modules \
+        --exclude-dir=.git \
+        --exclude='*.lock' \
+        --exclude='package-lock.json' \
+        --exclude='yarn.lock' \
+        --include='*.json' \
+        --include='*.js' \
+        --include='*.ts' \
+        . 2>/dev/null || true)
+      
+      # Compile results
+      compromised=false
+      
+      if [[ -n "$package_json_matches" ]]; then
+        echo -e "\n❌ CRITICAL: Compromised packages found in package.json files:"
+        echo "$package_json_matches"
+        compromised=true
+      fi
+      
+      if [[ -n "$lock_matches" ]]; then
+        echo -e "\n❌ CRITICAL: Compromised packages found in package-lock.json files:"
+        echo "$lock_matches"
+        compromised=true
+      fi
+      
+      if [[ -n "$yarn_matches" ]]; then
+        echo -e "\n❌ CRITICAL: Compromised packages found in yarn.lock files:"
+        echo "$yarn_matches"
+        compromised=true
+      fi
+      
+      if [[ -n "$other_matches" ]]; then
+        echo -e "\n❌ CRITICAL: Compromised packages referenced in other files:"
+        echo "$other_matches"
+        compromised=true
+      fi
+      
+      if [[ "$compromised" == "true" ]]; then
+        echo -e "\n🚨 SECURITY ALERT: Known compromised packages detected!"
+        echo "============================================================"
+        echo "⚠️  CVE-2025-54313: Supply chain attack with embedded malware"
+        echo "⚠️  These packages contain malicious code that can:"
+        echo "   - Harvest credentials and sensitive files"
+        echo "   - Execute arbitrary code on Windows systems"
+        echo "   - Compromise your entire development environment"
+        echo ""
+        echo "📋 REQUIRED ACTIONS:"
+        echo "   1. Immediately update to safe versions:"
+        echo "      - eslint-config-prettier: Use 8.10.2, 9.1.2, or 10.1.8+"
+        echo "      - eslint-plugin-prettier: Use 4.2.4+"
+        echo "      - synckit: Use 0.11.10+"
+        echo "   2. Rotate any credentials that may have been exposed"
+        echo "   3. Scan affected systems for malware"
+        echo "   4. Review npm audit logs for suspicious activity"
+        echo ""
+        echo "🔗 References:"
+        echo "   - CVE Details: https://nvd.nist.gov/vuln/detail/CVE-2025-54313"
+        echo "   - GitHub Issue: https://github.com/prettier/eslint-config-prettier/issues/339"
+        echo "============================================================"
+        exit 3  # Special exit code for compromised packages
+      else
+        echo -e "\n✅ No known compromised package versions found."
+        echo "Continue monitoring for new supply chain threats."
+      fi
+  
+  # This job must never be allowed to fail - it's a critical security gate
+  allow_failure: false
+  
+  # Run on all branches and merge requests
+  only:
+    - branches
+    - merge_requests
+    - tags
+  
+  tags:
+    - docker
+
+# Usage Instructions:
+# 1. Include this template in your .gitlab-ci.yml BEFORE any other templates:
+#    include:
+#      - local: '.agent-os/templates/mandatory-javascript-supply-chain-scan.yml'
+#      - local: '.agent-os/templates/gitlab-ci-security.yml'  # Other security scans
+#
+# 2. Ensure your pipeline stages include 'critical-security' as the first stage:
+#    stages:
+#      - critical-security
+#      - security
+#      - build
+#      - test
+#      - deploy
+#
+# 3. This scan will block the pipeline if compromised packages are detected
